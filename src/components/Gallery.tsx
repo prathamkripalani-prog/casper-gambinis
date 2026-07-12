@@ -91,9 +91,7 @@ export default function Gallery() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.4, delay: i * 0.05 }}
-                className={`relative overflow-hidden rounded-lg cursor-pointer group ${
-                  i === 0 && filtered.length > 3 ? "sm:col-span-2 sm:row-span-2" : ""
-                }`}
+                className="relative overflow-hidden rounded-lg cursor-pointer group transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_45px_rgba(212,175,55,0.18)]"
                 onClick={() => openLightbox(i)}
               >
                 <div className="aspect-square sm:aspect-auto sm:h-64">

@@ -89,7 +89,8 @@ export default function FeaturedDishes() {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="group relative overflow-hidden rounded-xl glass-card cursor-pointer"
+              className="group relative overflow-hidden rounded-xl glass-card cursor-pointer transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_25px_50px_rgba(212,175,55,0.18)]"
+
             >
               {/* Image */}
               <div className="relative h-56 overflow-hidden">

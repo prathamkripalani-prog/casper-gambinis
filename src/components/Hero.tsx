@@ -22,20 +22,56 @@ export default function Hero() {
     <section id="home" className="relative h-screen overflow-hidden">
       {/* Background Image with Parallax */}
       <div
-        ref={parallaxRef}
-        className="absolute inset-0 -top-20 -bottom-20"
-        style={{ willChange: "transform" }}
-      >
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070')`,
-          }}
-        />
-      </div>
+  ref={parallaxRef}
+  className="absolute inset-0 -top-20 -bottom-20"
+  style={{ willChange: "transform" }}
+>
+  <motion.div
+    className="absolute inset-0 bg-cover bg-center"
+    style={{
+      backgroundImage: `url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070')`,
+    }}
+    animate={{
+      scale: [1, 1.08, 1],
+    }}
+    transition={{
+      duration: 24,
+      repeat: Infinity,
+      ease: "easeInOut",
+    }}
+  />
+</div>
 
       {/* Overlay */}
       <div className="absolute inset-0 hero-overlay" />
+      {/* Ambient Golden Glow */}
+<motion.div
+  className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-yellow-400/10 blur-3xl"
+  animate={{
+    x: [0, 60, 0],
+    y: [0, 40, 0],
+    scale: [1, 1.15, 1],
+  }}
+  transition={{
+    duration: 18,
+    repeat: Infinity,
+    ease: "easeInOut",
+  }}
+/>
+
+<motion.div
+  className="absolute -bottom-32 -right-32 w-[450px] h-[450px] rounded-full bg-orange-300/10 blur-3xl"
+  animate={{
+    x: [0, -50, 0],
+    y: [0, -30, 0],
+    scale: [1, 1.1, 1],
+  }}
+  transition={{
+    duration: 20,
+    repeat: Infinity,
+    ease: "easeInOut",
+  }}
+/>
 
       {/* Gold accent line */}
       <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[var(--gold)] to-transparent" />
