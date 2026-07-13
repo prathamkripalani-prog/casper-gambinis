@@ -46,6 +46,7 @@ import { beverageMenu } from "@/data/beverageMenu";
 import { events } from "@/data/events";
 import { reviews } from "@/data/reviews";
 import { formatPrice } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 import type { MenuItem } from "@/data/foodMenu";
 import type { Event } from "@/data/events";
 import type { Review } from "@/data/reviews";
@@ -219,7 +220,7 @@ export default function AdminDashboard() {
   // Editable state
   const [editableFoodMenu, setEditableFoodMenu] = useState(foodMenu);
   const [editableBeverageMenu, setEditableBeverageMenu] = useState(beverageMenu);
-  const [editableEvents, setEditableEvents] = useState(events);
+  const [editableEvents, setEditableEvents] = useState<Event[]>([]);
   const [editableReviews, setEditableReviews] = useState(reviews);
   const [editableHours, setEditableHours] = useState({
     monday: "10:00 AM – 2:00 AM",
@@ -242,6 +243,23 @@ export default function AdminDashboard() {
   const showToast = useCallback((message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
   }, []);
+  useEffect(() => {
+  async function loadEvents() {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .order("event_date", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    setEditableEvents(data || []);
+  }
+
+  loadEvents();
+}, []);
 
   // Stats
   const totalFoodItems = editableFoodMenu.reduce((sum, cat) => sum + cat.items.length, 0);
@@ -865,21 +883,44 @@ function EventsSection({ eventsList, setEvents, showToast, setConfirm }: {
     });
   };
 
-  const handleCreate = () => {
-    if (!form.title) return;
-    const newEvent: Event = {
-      id: Date.now(),
+  const handleCreate = async () => {
+  if (!form.title) return;
+
+  const { error } = await supabase
+    .from("events")
+    .insert({
       title: form.title,
       description: form.description,
-      date: form.date || "TBD",
-      time: form.time || "TBD",
-      type: form.type as "upcoming" | "promotion" | "announcement",
-    };
-    setEvents([newEvent, ...eventsList]);
-    setForm({ title: "", description: "", date: "", time: "", type: "upcoming" });
-    setShowForm(false);
-    showToast("Event created successfully");
-  };
+      event_date: form.date || "TBD",
+      event_time: form.time || "TBD",
+      event_type: form.type,
+    });
+
+  if (error) {
+    showToast("Failed to create event", "error");
+    console.error(error);
+    return;
+  }
+
+  const { data } = await supabase
+    .from("events")
+    .select("*")
+    .order("event_date", { ascending: true });
+
+  setEvents(data || []);
+
+  setForm({
+    title: "",
+    description: "",
+    date: "",
+    time: "",
+    type: "upcoming",
+  });
+
+  setShowForm(false);
+  showToast("Event created successfully");
+};
+   
 
   return (
     <div>

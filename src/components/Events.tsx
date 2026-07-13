@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   Calendar,
@@ -10,8 +10,24 @@ import {
   Megaphone,
   ChevronRight,
 } from "lucide-react";
-import { events, eventTypes } from "@/data/events";
-import type { Event } from "@/data/events";
+import { supabase } from "@/lib/supabase";
+
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  image?: string;
+  event_date: string;
+  event_time: string;
+  event_type: string;
+}
+
+const eventTypes = [
+  { value: "all", label: "All Events" },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "promotion", label: "Promotions" },
+  { value: "announcement", label: "Announcements" },
+];
 
 const typeIcons: Record<string, React.ElementType> = {
   upcoming: Calendar,
@@ -26,7 +42,7 @@ const typeColors: Record<string, string> = {
 };
 
 function EventCard({ event, index }: { event: Event; index: number }) {
-  const TypeIcon = typeIcons[event.type] || Sparkles;
+  const TypeIcon = typeIcons[event.event_type] || Sparkles;
 
   return (
     <motion.div
@@ -53,12 +69,11 @@ function EventCard({ event, index }: { event: Event; index: number }) {
             {/* Type badge */}
             <div className="flex items-center gap-2 mb-3">
               <span
-                className={`inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider px-2.5 py-1 rounded-full border ${
-                  typeColors[event.type]
-                }`}
+                className={`inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider px-2.5 py-1 rounded-full border ${typeColors[event.event_type]
+                  }`}
               >
                 <TypeIcon size={10} />
-                {event.type}
+                {event.event_type}
               </span>
             </div>
 
@@ -75,11 +90,11 @@ function EventCard({ event, index }: { event: Event; index: number }) {
           <div className="flex items-center gap-4 text-xs text-[var(--cream)]/50">
             <span className="flex items-center gap-1.5">
               <Calendar size={12} className="text-[var(--gold)]" />
-              {event.date}
+              {event.event_date}
             </span>
             <span className="flex items-center gap-1.5">
               <Clock size={12} className="text-[var(--gold)]" />
-              {event.time}
+              {event.event_time}
             </span>
           </div>
         </div>
@@ -89,14 +104,36 @@ function EventCard({ event, index }: { event: Event; index: number }) {
 }
 
 export default function Events() {
-  const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  useEffect(() => {
+    async function loadEvents() {
+     const { data, error } = await supabase
+  .from("events")
+  .select("*");
+
+
+
+if (error) {
+  alert(JSON.stringify(error));
+} else {
+  alert(JSON.stringify(data));
+  setEvents(data || []);
+}
+
+      setLoading(false);
+    }
+
+    loadEvents();
+  }, []);
 
   const filteredEvents =
     activeFilter === "all"
       ? events
-      : events.filter((e) => e.type === activeFilter);
+      : events.filter((e) => e.event_type === activeFilter);
 
   return (
     <section id="events" className="relative py-20 md:py-32 px-4 bg-[var(--warm-black-2)] overflow-hidden">
@@ -133,9 +170,8 @@ export default function Events() {
             <button
               key={type.value}
               onClick={() => setActiveFilter(type.value)}
-              className={`category-btn ${
-                activeFilter === type.value ? "active" : ""
-              }`}
+              className={`category-btn ${activeFilter === type.value ? "active" : ""
+                }`}
             >
               {type.label}
             </button>
