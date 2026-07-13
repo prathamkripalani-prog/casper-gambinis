@@ -61,11 +61,27 @@ export default function About() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Image */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={isInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="relative"
-          >
+  initial={{ opacity: 0, x: -50 }}
+  animate={
+    isInView
+      ? {
+          opacity: 1,
+          x: 0,
+          y: [0, -8, 0],
+        }
+      : {}
+  }
+  transition={{
+    opacity: { duration: 0.7 },
+    x: { duration: 0.7, delay: 0.2 },
+    y: {
+      duration: 6,
+      repeat: Infinity,
+      ease: "easeInOut",
+    },
+  }}
+  className="relative"
+>
             <div className="relative overflow-hidden rounded-lg aspect-[4/3]">
               <div
                 className="absolute inset-0 bg-cover bg-center transform hover:scale-105 transition-transform duration-700"

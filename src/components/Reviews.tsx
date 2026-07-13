@@ -66,10 +66,12 @@ export default function Reviews() {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.1 + i * 0.05 }}
-              className="glass-card rounded-xl p-6 group hover:border-[var(--gold)]/30 transition-all duration-300"
+              className="glass-card rounded-xl p-6 group hover:border-[var(--gold)]/30 transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_25px_50px_rgba(212,175,55,0.18)] relative overflow-hidden"
             >
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--gold)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl pointer-events-none" />
+
               {/* Quote icon */}
-              <Quote size={20} className="text-[var(--gold)]/30 mb-3" />
+              <Quote size={34} className="text-[var(--gold)]/15 absolute top-5 right-5 transition-transform duration-500 group-hover:scale-110" />
 
               {/* Stars */}
               <div className="flex gap-0.5 mb-4">
@@ -101,6 +103,21 @@ export default function Reviews() {
             </motion.div>
           ))}
         </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="flex justify-center mt-12"
+        >
+          <a
+            href="https://www.google.com/search?safe=active&sca_esv=20b4b65056ec4911&sxsrf=APpeQnvoqG9wvLQmudRmOvs62icEbnw2wg:1783937082106&q=Casper+%26+Gambini%27s+Lagos&si=APenkKm7iecQ4G6P-TsbSMFKIQtv3EFIqRAFw-i8uEbk55Z-_8RB5hSsrdqitmEWZAaYbP8pp2ybBTxRRM6DIu34_0c0SER-t7UWukVSUWpgMpUDu9OFi0m5bu4yPaXXjo7Dis_WUj5Vol7naEUFE0rbSUUjK3mZFg%3D%3D&sa=X&ved=2ahUKEwiP_NHAs8-VAxUzUUEAHZQsHioQrrQLegQIIRAA&biw=1470&bih=833&dpr=2#lrd=0x103b93ca16b61ca9:0x3768f4c38277bc14,3,,,,"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center rounded-full border border-[var(--gold)] bg-[var(--gold)]/10 px-8 py-3 text-sm font-medium tracking-wide text-[var(--gold)] transition-all duration-300 hover:bg-[var(--gold)] hover:text-black hover:shadow-[0_0_30px_rgba(212,175,55,0.35)]"
+          >
+            Leave a Review
+          </a>
+        </motion.div>
       </div>
     </section>
   );

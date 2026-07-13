@@ -33,14 +33,12 @@ function EventCard({ event, index }: { event: Event; index: number }) {
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
-      className={`group relative overflow-hidden rounded-xl glass-card transition-all duration-500 hover:border-[var(--gold)]/40 ${
-        event.featured ? "sm:col-span-2 lg:col-span-2" : ""
-      }`}
+      className="group relative overflow-hidden rounded-xl glass-card transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_25px_50px_rgba(212,175,55,0.18)] hover:border-[var(--gold)]/40"
     >
       <div className="flex flex-col sm:flex-row h-full">
         {/* Image */}
         {event.image && (
-          <div className="relative sm:w-48 lg:w-56 h-48 sm:h-auto overflow-hidden flex-shrink-0">
+          <div className="relative sm:w-48 lg:w-56 h-48 sm:h-auto overflow-hidden flex-shrink-0 group-hover:scale-110 transition-transform duration-500">
             <div
               className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
               style={{ backgroundImage: `url('${event.image}')` }}
@@ -62,12 +60,6 @@ function EventCard({ event, index }: { event: Event; index: number }) {
                 <TypeIcon size={10} />
                 {event.type}
               </span>
-              {event.featured && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider px-2.5 py-1 rounded-full bg-[var(--gold)]/10 text-[var(--gold)] border border-[var(--gold)]/20">
-                  <Sparkles size={10} />
-                  Featured
-                </span>
-              )}
             </div>
 
             <h3 className="font-serif text-lg sm:text-xl text-[var(--cream)] group-hover:text-[var(--gold)] transition-colors duration-300 mb-2">
@@ -112,6 +104,8 @@ export default function Events() {
       <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[var(--gold)]/3 rounded-full blur-3xl" />
 
       <div className="relative max-w-7xl mx-auto" ref={ref}>
+        {/* Removed vertical timeline line */}
+
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -148,7 +142,7 @@ export default function Events() {
           ))}
         </motion.div>
 
-        {/* Events Grid */}
+        {/* Events Timeline */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeFilter}
@@ -156,14 +150,23 @@ export default function Events() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            className="flex flex-col gap-8 max-w-4xl mx-auto"
           >
             {filteredEvents.length > 0 ? (
               filteredEvents.map((event, i) => (
-                <EventCard key={event.id} event={event} index={i} />
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.25 }}
+                  transition={{ duration: 0.6, delay: i * 0.08 }}
+                  className="w-full"
+                >
+                  <EventCard event={event} index={i} />
+                </motion.div>
               ))
             ) : (
-              <div className="col-span-full text-center py-16">
+              <div className="text-center py-16">
                 <Calendar size={40} className="mx-auto text-[var(--gold)]/30 mb-4" />
                 <p className="text-[var(--cream)]/50">
                   No {activeFilter} events at this time.
