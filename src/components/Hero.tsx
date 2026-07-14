@@ -134,7 +134,7 @@ export default function Hero({ onReserveClick }: HeroProps) {
   onClick={() => {
     console.log("BUTTON CLICKED");
     console.log("onReserveClick =", onReserveClick);
-onReserveClick();
+    onReserveClick();
   }}
   className="btn-outline text-base sm:text-lg flex items-center justify-center gap-2"
 >

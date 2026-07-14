@@ -69,6 +69,7 @@ type DashboardSection =
   | "reviews"
   | "hours"
   | "contact"
+  | "reservations"
   | "settings"
   | "seo"
   | "analytics"
@@ -98,6 +99,7 @@ const adminNavItems: NavItem[] = [
   { id: "reviews", label: "Reviews", icon: Star, category: "content" },
   { id: "hours", label: "Opening Hours", icon: Clock, category: "content" },
   { id: "contact", label: "Contact", icon: MapPin, category: "content" },
+  { id: "reservations", label: "Reservations", icon: Users, category: "content" },
   { id: "seo", label: "SEO", icon: Globe, category: "system" },
   { id: "analytics", label: "Analytics", icon: BarChart3, category: "system" },
 ];
@@ -265,10 +267,13 @@ export default function AdminDashboard() {
       console.log("STEP 3");
       console.log(data);
       console.log(error);
+     if (error) {
+  console.error(error);
+  showToast(error.message, "error");
+  return;
+}
 
-      if (!error) {
-        setEditableEvents(data || []);
-      }
+
 
     } catch (err) {
       console.log("STEP 4");
@@ -346,6 +351,8 @@ export default function AdminDashboard() {
             showToast={showToast}
           />
         );
+      case "reservations":
+        return <ReservationsSection showToast={showToast} />;
       case "seo":
         return <SEOSection showToast={showToast} />;
       case "analytics":
@@ -1246,6 +1253,454 @@ function AnalyticsSection() {
           Connect Google Analytics or similar service for detailed insights
         </p>
       </div>
+    </div>
+  );
+}
+
+function ReservationsSection({ showToast }: { showToast: (msg: string, type?: "success" | "error") => void }) {
+  const [reservations, setReservations] = useState<Array<{
+    id: string;
+    booking_code: string;
+    name: string;
+    phone: string;
+    email: string;
+    reservation_date: string;
+    reservation_time: string;
+    guests: number;
+    status: "Pending" | "Confirmed" | "Cancelled" | "Completed" | "No Show";
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+const [activeTab, setActiveTab] = useState<
+  "Active" | "Completed" | "Cancelled"
+>("Active");
+
+  const fetchReservations = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.group("🔍 ADMIN DASHBOARD - Reservations Fetch Debug");
+      console.log("⏱️ Timestamp:", new Date().toISOString());
+      console.log("📍 Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log("🔑 Supabase Key exists:", !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+      console.log("📋 Query Details: supabase.from('reservations').select('*')");
+
+      const { data, error: fetchError } = await supabase
+        .from("reservations")
+        .select(`
+  id,
+  booking_code,
+  name,
+  email,
+  phone,
+  reservation_date,
+  reservation_time,
+  guests,
+  status
+`)
+        .order("reservation_date", { ascending: true })
+        .order("reservation_time", { ascending: true });
+
+      console.log("✅ Query executed");
+      console.log("📦 Data returned:", data);
+      console.log("📊 Data length:", data?.length || 0);
+      console.log("❌ Error returned:", fetchError);
+
+      if (fetchError) {
+        console.error("🚨 Supabase Error Details:", {
+          message: fetchError.message,
+          code: fetchError.code,
+          details: fetchError.details,
+          hint: fetchError.hint,
+        });
+        console.error(
+          "💡 Hint: If 'permission denied' or 'relation does not exist', check RLS policies"
+        );
+        setError(fetchError.message || "Failed to fetch reservations");
+        console.groupEnd();
+        return;
+      }
+
+      console.log("✨ About to set state with reservations:", data);
+      setReservations(data || []);
+      console.log("✅ State updated. Reservations count:", data?.length || 0);
+      console.groupEnd();
+    } catch (err) {
+      console.error("💥 Unexpected error:", err);
+      const errorMsg =
+        err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(errorMsg);
+      console.groupEnd();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReservations();
+  }, []);
+
+  const getStatusColor = (
+    status: "Pending" | "Confirmed" | "Cancelled" | "Completed" | "No Show"
+  ) => {
+    switch (status) {
+      case "Pending":
+        return "bg-yellow-500/10 border border-yellow-500/30 text-yellow-400";
+      case "Confirmed":
+        return "bg-green-500/10 border border-green-500/30 text-green-400";
+      case "Cancelled":
+        return "bg-red-500/10 border border-red-500/30 text-red-400";
+      case "Completed":
+        return "bg-blue-500/10 border border-blue-500/30 text-blue-400";
+      case "No Show":
+        return "bg-gray-500/10 border border-gray-500/30 text-gray-400";
+      default:
+        return "bg-gray-500/10 border border-gray-500/30 text-gray-400";
+    }
+  };
+
+  const countByStatus = (status: string) => {
+    return reservations.filter((r) => r.status === status).length;
+  };
+
+  const summaryCards = [
+    {
+      label: "Total Reservations",
+      count: reservations.length,
+      bgColor: "bg-[var(--gold)]/10",
+      borderColor: "border-[var(--gold)]/30",
+      textColor: "text-[var(--gold)]",
+    },
+    {
+      label: "Pending",
+      count: countByStatus("Pending"),
+      bgColor: "bg-yellow-500/10",
+      borderColor: "border-yellow-500/30",
+      textColor: "text-yellow-400",
+    },
+    {
+      label: "Confirmed",
+      count: countByStatus("Confirmed"),
+      bgColor: "bg-green-500/10",
+      borderColor: "border-green-500/30",
+      textColor: "text-green-400",
+    },
+    {
+      label: "Cancelled",
+      count: countByStatus("Cancelled"),
+      bgColor: "bg-red-500/10",
+      borderColor: "border-red-500/30",
+      textColor: "text-red-400",
+    },
+  ];
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="font-serif text-2xl text-[var(--cream)] mb-1">Reservations</h2>
+          <p className="text-sm text-[var(--cream)]/50">Manage all table reservations</p>
+        </div>
+        <button
+          onClick={() => {
+            fetchReservations();
+            showToast("Reservations refreshed");
+          }}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--gold)] text-[var(--warm-black)] font-semibold hover:bg-[var(--gold)]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+          <p className="font-semibold mb-2">⚠️ Error Loading Reservations</p>
+          <p>{error}</p>
+        </div>
+      )}
+     <div className="mb-6 relative">
+  <Search
+    size={18}
+    className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--cream)]/40"
+  />
+
+  <input
+    type="text"
+    placeholder="Search by booking code or customer name..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/40 border border-[var(--gold)]/20 text-[var(--cream)] placeholder:text-[var(--cream)]/40 focus:outline-none focus:border-[var(--gold)]"
+  />
+</div>
+<div className="flex gap-3 mb-6">
+  {(["Active", "Completed", "Cancelled"] as const).map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      className={`px-4 py-2 rounded-lg transition ${
+        activeTab === tab
+          ? "bg-[var(--gold)] text-black font-semibold"
+          : "bg-white/5 text-[var(--cream)] hover:bg-white/10"
+      }`}
+    >
+      {tab}
+    </button>
+  ))}
+</div>
+      {/* Summary Cards */}
+      {!loading && !error && reservations.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {summaryCards.map((card, index) => (
+            <div
+              key={index}
+              className={`${card.bgColor} ${card.borderColor} border rounded-xl p-5 transition-transform hover:scale-105`}
+            >
+              <p className="text-xs text-[var(--cream)]/70 mb-2">{card.label}</p>
+              <p className={`text-2xl font-bold ${card.textColor}`}>{card.count}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin">
+            <RefreshCw size={32} className="text-[var(--gold)]" />
+          </div>
+          <p className="text-[var(--cream)]/70 mt-4">Loading reservations...</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && reservations.length === 0 && !error && (
+        <div className="text-center py-12">
+          <Users size={40} className="mx-auto text-[var(--gold)]/30 mb-4" />
+          <p className="text-[var(--cream)]/70 text-lg">No reservations found</p>
+          <p className="text-xs text-[var(--cream)]/50 mt-3">
+            💡 If reservations exist in Supabase but don't appear, check browser console for
+            debug logs. RLS policies may be filtering results.
+          </p>
+        </div>
+      )}
+
+      {/* Reservations Table */}
+      {!loading && reservations.length > 0 && (
+        <div className="overflow-x-auto rounded-xl border border-[var(--gold)]/20 bg-black/40">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[var(--gold)]/20 bg-black/40">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--gold)] whitespace-nowrap">
+                  Booking Code
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--gold)] whitespace-nowrap">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--gold)] whitespace-nowrap hidden md:table-cell">
+                  Phone
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--gold)] whitespace-nowrap">
+                  Date
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--gold)] whitespace-nowrap">
+                  Time
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-[var(--gold)] whitespace-nowrap">
+                  Guests
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--gold)] whitespace-nowrap">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-[var(--gold)] whitespace-nowrap">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {reservations
+  .filter((reservation) => {
+    const matchesSearch =
+      reservation.booking_code
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      reservation.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+    if (activeTab === "Active") {
+      return (
+        matchesSearch &&
+        reservation.status !== "Completed" &&
+        reservation.status !== "Cancelled"
+      );
+    }
+
+    if (activeTab === "Completed") {
+      return matchesSearch && reservation.status === "Completed";
+    }
+
+    return matchesSearch && reservation.status === "Cancelled";
+  })
+  .map((reservation, index) => (
+                <tr
+                  key={reservation.id}
+                  className={`border-b border-[var(--gold)]/10 transition-colors hover:bg-black/30 ${
+                    index % 2 === 0 ? "bg-black/20" : "bg-transparent"
+                  }`}
+                >
+                  <td className="px-4 py-3 text-xs text-[var(--cream)] font-mono">
+                    {reservation.booking_code}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[var(--cream)]">
+                    {reservation.name}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[var(--cream)] hidden md:table-cell">
+                    {reservation.phone}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[var(--cream)]">
+                    {new Date(
+                      reservation.reservation_date
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[var(--cream)]">
+                    {reservation.reservation_time}
+                  </td>
+                  <td className="px-4 py-3 text-center text-xs">
+                    <span className="inline-block px-2 py-1 rounded bg-[var(--gold)]/20 border border-[var(--gold)]/30 text-[var(--gold)]">
+                      {reservation.guests}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <span
+                      className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getStatusColor(
+                        reservation.status
+                      )}`}
+                    >
+                      {reservation.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      {reservation.status !== "Confirmed" && (
+                        <button
+                          onClick={async () => {
+                            const { error } = await supabase
+                              .from("reservations")
+                              .update({ status: "Confirmed" })
+                              .eq("id", reservation.id);
+
+                            if (!error) {
+  await fetch("/api/send-reservation-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: reservation.name,
+      email: reservation.email,
+      bookingCode: reservation.booking_code,
+      reservationDate: reservation.reservation_date,
+      reservationTime: reservation.reservation_time,
+      guests: reservation.guests,
+    }),
+  });
+
+  await fetchReservations();
+  showToast("Reservation confirmed");
+}
+                          }}
+                          className="px-2 py-1 rounded bg-green-600 text-white text-xs hover:bg-green-700"
+                        >
+                          Confirm
+                        </button>
+                      )}
+
+                      {reservation.status !== "Cancelled" && reservation.status !== "Completed" && (
+                        <button
+                          onClick={async () => {
+                            const { error } = await supabase
+                              .from("reservations")
+                              .update({ status: "Cancelled" })
+                              .eq("id", reservation.id);
+
+                            if (!error) {
+                              await fetchReservations();
+                              showToast("Reservation cancelled");
+                            }
+                          }}
+                          className="px-2 py-1 rounded bg-red-600 text-white text-xs hover:bg-red-700"
+                        >
+                          Cancel
+                        </button>
+                      )}
+
+                      {reservation.status === "Confirmed" && (
+                        <button
+                          onClick={async () => {
+                            const { error } = await supabase
+                              .from("reservations")
+                              .update({ status: "Completed" })
+                              .eq("id", reservation.id);
+
+                            if (!error) {
+                              await fetchReservations();
+                              showToast("Reservation completed");
+                            }
+                          }}
+                          className="px-2 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700"
+                        >
+                          Complete
+                        </button>
+                      )}
+
+                      {reservation.status === "Completed" && (
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete reservation ${reservation.booking_code}?`)) return;
+
+                            console.log("Deleting reservation", reservation.id);
+
+                            const { data, error } = await supabase
+                              .from("reservations")
+                              .delete()
+                              .eq("id", reservation.id)
+                              .select();
+
+                            console.log("Delete response:", { data, error });
+
+                            if (error) {
+                              console.error("Delete failed:", error);
+                              showToast(error.message, "error");
+                              return;
+                            }
+
+                            setReservations((prev) =>
+                              prev.filter((r) => r.id !== reservation.id)
+                            );
+
+                            showToast("Reservation deleted");
+                          }}
+                          className="px-2 py-1 rounded bg-gray-700 text-white text-xs hover:bg-gray-800"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
