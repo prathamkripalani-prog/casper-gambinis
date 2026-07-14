@@ -3,7 +3,12 @@ import { createClient } from "@supabase/supabase-js";
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-console.log("SUPABASE URL:", url);
-console.log("SUPABASE KEY EXISTS:", !!key);
+if (!url) {
+  throw new Error("NEXT_PUBLIC_SUPABASE_URL is not configured");
+}
 
-export const supabase = createClient(url!, key!);
+if (!key) {
+  throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured");
+}
+
+export const supabase = createClient(url, key);
