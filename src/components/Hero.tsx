@@ -4,7 +4,11 @@ import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown, Phone } from "lucide-react";
 
-export default function Hero() {
+type HeroProps = {
+  onReserveClick: () => void;
+};
+
+export default function Hero({ onReserveClick }: HeroProps) {
   const parallaxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -126,13 +130,17 @@ export default function Hero() {
           <a href="#menu" className="btn-primary text-base sm:text-lg">
             View Menu
           </a>
-          <a
-            href="tel:+2349038900015"
-            className="btn-outline text-base sm:text-lg flex items-center justify-center gap-2"
-          >
-            <Phone size={18} />
-            Reserve Now
-          </a>
+          <button
+  onClick={() => {
+    console.log("BUTTON CLICKED");
+    console.log("onReserveClick =", onReserveClick);
+onReserveClick();
+  }}
+  className="btn-outline text-base sm:text-lg flex items-center justify-center gap-2"
+>
+  <Phone size={18} />
+  Reserve Test 123
+</button>
         </motion.div>
 
         {/* Scroll indicator */}

@@ -7,7 +7,7 @@ const cspHeader = `
   img-src 'self' data: blob: https://images.unsplash.com https://*.googleapis.com https://*.gstatic.com;
   font-src 'self' https://fonts.gstatic.com data:;
   frame-src 'self' https://www.google.com https://maps.google.com;
-  connect-src 'self' https://*.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com;
+  connect-src 'self' https://*.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://fdbzsxflmudjftoqvgtj.supabase.co;
   media-src 'self';
   object-src 'none';
   base-uri 'self';

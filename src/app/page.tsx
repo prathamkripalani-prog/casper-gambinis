@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import ReservationModal from "@/components/ReservationModal";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import About from "@/components/About";
@@ -16,6 +17,7 @@ import BackToTop from "@/components/BackToTop";
 import Particles from "@/components/Particles";
 
 export default function Home() {
+  const [showReservation, setShowReservation] = useState(false);
   useEffect(() => {
     // Smooth reveal for sections on load
     const observer = new IntersectionObserver(
@@ -37,7 +39,7 @@ export default function Home() {
     <main className="min-h-screen bg-[var(--warm-black)]">
       <Particles />
       <Navbar />
-      <Hero />
+      <Hero onReserveClick={() => setShowReservation(true)} />
       <About />
       <FeaturedDishes />
       <FoodMenu />
@@ -47,6 +49,10 @@ export default function Home() {
       <Reviews />
       <Contact />
       <Footer />
+      <ReservationModal
+  isOpen={showReservation}
+  onClose={() => setShowReservation(false)}
+/>
       <BackToTop />
     </main>
   );

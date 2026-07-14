@@ -48,7 +48,15 @@ import { reviews } from "@/data/reviews";
 import { formatPrice } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import type { MenuItem } from "@/data/foodMenu";
-import type { Event } from "@/data/events";
+interface Event {
+  id: number;
+  title: string;
+  description: string;
+  image?: string;
+  event_date: string;
+  event_time: string;
+  event_type: "upcoming" | "promotion" | "announcement";
+}
 import type { Review } from "@/data/reviews";
 
 // Types
@@ -245,21 +253,32 @@ export default function AdminDashboard() {
   }, []);
   useEffect(() => {
   async function loadEvents() {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("event_date", { ascending: true });
+    console.log("STEP 1");
 
-    if (error) {
-      console.error(error);
-      return;
+    try {
+      console.log("STEP 2");
+
+      const { data, error } = await supabase
+        .from("events")
+        .select("*");
+
+      console.log("STEP 3");
+      console.log(data);
+      console.log(error);
+
+      if (!error) {
+        setEditableEvents(data || []);
+      }
+
+    } catch (err) {
+      console.log("STEP 4");
+      console.error(err);
     }
-
-    setEditableEvents(data || []);
   }
 
   loadEvents();
 }, []);
+  
 
   // Stats
   const totalFoodItems = editableFoodMenu.reduce((sum, cat) => sum + cat.items.length, 0);
@@ -886,21 +905,21 @@ function EventsSection({ eventsList, setEvents, showToast, setConfirm }: {
   const handleCreate = async () => {
   if (!form.title) return;
 
-  const { error } = await supabase
-    .from("events")
-    .insert({
-      title: form.title,
-      description: form.description,
-      event_date: form.date || "TBD",
-      event_time: form.time || "TBD",
-      event_type: form.type,
-    });
+const { error } = await supabase
+  .from("events")
+  .insert({
+    title: form.title,
+    description: form.description,
+    event_date: form.date || null,
+    event_time: form.time || "",
+    event_type: form.type.toLowerCase(),
+    active: true,
+  });
 
   if (error) {
-    showToast("Failed to create event", "error");
-    console.error(error);
-    return;
-  }
+  
+  return;
+}
 
   const { data } = await supabase
     .from("events")
@@ -1007,15 +1026,15 @@ function EventsSection({ eventsList, setEvents, showToast, setConfirm }: {
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-sm font-medium text-[var(--cream)]">{event.title}</h3>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                  event.type === "upcoming" ? "bg-blue-500/10 text-blue-400" :
-                  event.type === "promotion" ? "bg-green-500/10 text-green-400" :
+                  event.event_type === "upcoming" ? "bg-blue-500/10 text-blue-400" :
+                  event.event_type === "promotion" ? "bg-green-500/10 text-green-400" :
                   "bg-amber-500/10 text-amber-400"
                 }`}>
-                  {event.type}
+                  {event.event_type}
                 </span>
               </div>
               <p className="text-xs text-[var(--cream)]/50 line-clamp-1">{event.description}</p>
-              <p className="text-[10px] text-[var(--cream)]/30 mt-1">{event.date} • {event.time}</p>
+              <p className="text-[10px] text-[var(--cream)]/30 mt-1">{event.event_date} • {event.event_time}</p>
             </div>
             <button
               onClick={() => handleDelete(event.id)}

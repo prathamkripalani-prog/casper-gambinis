@@ -110,25 +110,23 @@ export default function Events() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   useEffect(() => {
-    async function loadEvents() {
-     const { data, error } = await supabase
-  .from("events")
-  .select("*");
+    
+  async function loadEvents() {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*");
 
-
-
-if (error) {
-  alert(JSON.stringify(error));
-} else {
-  alert(JSON.stringify(data));
-  setEvents(data || []);
-}
-
-      setLoading(false);
+    if (error) {
+      console.error(error);
+    } else {
+      setEvents(data || []);
     }
 
-    loadEvents();
-  }, []);
+    setLoading(false);
+  }
+
+  loadEvents();
+}, []);
 
   const filteredEvents =
     activeFilter === "all"
