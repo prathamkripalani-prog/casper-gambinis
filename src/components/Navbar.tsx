@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Phone } from "lucide-react";
+import { Menu, X } from "lucide-react";
+
+type NavbarProps = {
+  onReserveClick?: () => void;
+};
 
 const navLinks = [
   { label: "Home", href: "#home" },
@@ -14,7 +18,7 @@ const navLinks = [
   { label: "Contact", href: "#contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ onReserveClick }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -72,13 +76,13 @@ export default function Navbar() {
                   <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[var(--gold)] transition-all duration-300 group-hover:w-full" />
                 </a>
               ))}
-              <a
-                href="tel:+2349038900015"
+              <button
+                type="button"
+                onClick={onReserveClick}
                 className="btn-primary text-sm flex items-center gap-2 !py-2 !px-5"
               >
-                <Phone size={14} />
                 Reserve Now
-              </a>
+              </button>
             </div>
 
             {/* Mobile Controls */}
@@ -120,17 +124,19 @@ export default function Navbar() {
                   {link.label}
                 </motion.a>
               ))}
-              <motion.a
-                href="tel:+2349038900015"
+              <motion.button
+                type="button"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: navLinks.length * 0.1 }}
-                onClick={() => setMobileOpen(false)}
+                onClick={() => {
+                  setMobileOpen(false);
+                  onReserveClick?.();
+                }}
                 className="btn-primary text-lg mt-4 flex items-center gap-2"
               >
-                <Phone size={18} />
-                Reserve Now — +234 903 890 0015
-              </motion.a>
+                Reserve Now
+              </motion.button>
             </div>
           </motion.div>
         )}

@@ -25,9 +25,13 @@ export default function ReservationModal({
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showOtpStep, setShowOtpStep] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [duplicateReservationNotice, setDuplicateReservationNotice] = useState(false);
+
+  const restaurantPhoneNumber = "+2349038900015";
+  const restaurantWhatsAppNumber = "2348170011228";
+  const whatsappLink =
+    "https://wa.me/2348170011228?text=Hello%20Casper%20%26%20Gambini's,%20I%20would%20like%20to%20make%20a%20reservation";
+  const callLink = `tel:${restaurantPhoneNumber}`;
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -35,7 +39,11 @@ export default function ReservationModal({
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+  ...prev,
+  [name]: value,
+  ...(name === "date" ? { time: "" } : {}),
+}));
   };
 
   const resetForm = () => {
@@ -64,8 +72,49 @@ export default function ReservationModal({
   const generateOtp = (): string => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
+  const formatTime = (hour: number, minute: number) => {
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
 
+  return {
+    value: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+    label: `${displayHour}:${String(minute).padStart(2, "0")} ${period}`,
+  };
+};
+
+const getAvailableTimeSlots = () => {
+  if (!formData.date) return [];
+
+  const selectedDate = new Date(formData.date);
+  const day = selectedDate.getDay();
+
+  const startHour = day === 0 ? 10 : 9;
+  const endHour = 21;
+
+  const now = new Date();
+  const isToday = selectedDate.toDateString() === now.toDateString();
+
+  const slots = [];
+
+  for (let hour = startHour; hour <= endHour; hour++) {
+    for (const minute of [0, 30]) {
+      if (hour === endHour && minute === 30) continue;
+
+      if (isToday) {
+        const slotTime = new Date(selectedDate);
+        slotTime.setHours(hour, minute, 0, 0);
+
+        if (slotTime <= now) continue;
+      }
+
+      slots.push(formatTime(hour, minute));
+    }
+  }
+
+  return slots;
+};
   const handleSubmit = async (e: React.FormEvent) => {
+    
     e.preventDefault();
 
     // Prevent duplicate submissions
@@ -74,9 +123,9 @@ export default function ReservationModal({
     setLoading(true);
     setErrorMessage(null);
     setSuccessMessage(null);
+    setDuplicateReservationNotice(false);
 
     const newOtp = generateOtp();
-    setGeneratedOtp(newOtp);
     console.log("OTP (development only):", newOtp);
 
     // Temporary until the OTP UI is implemented.
@@ -86,8 +135,47 @@ export default function ReservationModal({
       // Generate booking code
       const bookingCode = generateBookingCode();
 
+      const { data: sameDayReservations, error: checkError } = await supabase
+        .from("reservations")
+        .select("id, email, phone, reservation_date, reservation_time, status")
+        .eq("reservation_date", formData.date)
+        .in("status", ["Pending", "Confirmed"]);
+
+      if (checkError) {
+        throw new Error("Unable to check table availability.");
+      }
+
+      const normalizedEmail = formData.email.trim().toLowerCase();
+      const normalizedPhone = formData.phone.trim();
+
+      const hasDuplicateCustomerReservation = (sameDayReservations ?? []).some(
+        (reservation) => {
+          const existingEmail = reservation.email?.toLowerCase();
+          const existingPhone = reservation.phone?.trim();
+
+          return (
+            (existingEmail && existingEmail === normalizedEmail) ||
+            (existingPhone && existingPhone === normalizedPhone)
+          );
+        }
+      );
+
+      if (hasDuplicateCustomerReservation) {
+        setDuplicateReservationNotice(true);
+        setLoading(false);
+        return;
+      }
+
+      if (sameDayReservations && sameDayReservations.filter((reservation) => reservation.reservation_time === formData.time).length >= 20) {
+        setErrorMessage(
+          "Sorry, this time slot is fully booked. Please choose another date or time."
+        );
+        setLoading(false);
+        return;
+      }
+
       // Insert into Supabase
-      const { data, error } = await supabase.from("reservations").insert({
+      const { error } = await supabase.from("reservations").insert({
         booking_code: bookingCode,
         name: formData.fullName,
         email: formData.email,
@@ -186,10 +274,45 @@ export default function ReservationModal({
                 </h3>
                 <p className="text-[var(--cream)] leading-7">
                   Your reservation has been received successfully.<br /><br />
-                  Please keep an eye on your email inbox. Once our team confirms your reservation, you'll receive a confirmation email containing your booking code.
+                  Please keep an eye on your email inbox. Once our team confirms your reservation, you&apos;ll receive a confirmation email containing your booking code.
                   <br /><br />
-                  We look forward to welcoming you to <span className="text-[var(--gold)] font-semibold">Casper & Gambini's</span>.
+                  We look forward to welcoming you to <span className="text-[var(--gold)] font-semibold">Casper & Gambini&apos;s</span>.
                 </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Duplicate Reservation Notice */}
+        {duplicateReservationNotice && (
+          <div className="mb-6 rounded-2xl border border-[var(--gold)]/40 bg-[var(--warm-black)] p-6 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--gold)] text-[var(--warm-black)] text-2xl font-bold">
+                !
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-[var(--gold)] mb-2">
+                  One Online Reservation Per Customer Per Day
+                </h3>
+                <p className="text-[var(--cream)] leading-7">
+                  We only allow one online reservation per customer per day. If you need to arrange multiple reservations for the same date, please contact us directly so we can assist you.
+                </p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <a
+                    href={whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-emerald-500"
+                  >
+                    WhatsApp Us
+                  </a>
+                  <a
+                    href={callLink}
+                    className="inline-flex items-center justify-center rounded-lg border border-[var(--gold)]/60 bg-[var(--gold)] px-4 py-2.5 font-semibold text-[var(--warm-black)] transition-colors hover:bg-[var(--gold)]/90"
+                  >
+                    Call Restaurant
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -203,7 +326,7 @@ export default function ReservationModal({
         )}
 
         {/* Form */}
-        {!successMessage && (
+        {!successMessage && !duplicateReservationNotice && (
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Row 1: Full Name & Email */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -260,11 +383,18 @@ export default function ReservationModal({
                 Reservation Date *
               </label>
               <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                required
+
+  type="date"
+
+  name="date"
+
+  value={formData.date}
+
+  onChange={handleChange}
+
+  min={new Date().toISOString().split("T")[0]}
+
+  required
                 className="w-full bg-black/40 border border-[var(--gold)]/30 rounded-lg px-4 py-3 text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]/60 focus:ring-1 focus:ring-[var(--gold)]/30 transition-colors"
               />
             </div>
@@ -272,14 +402,35 @@ export default function ReservationModal({
               <label className="block text-sm font-semibold text-[var(--gold)] mb-2">
                 Reservation Time *
               </label>
-              <input
-                type="time"
-                name="time"
-                value={formData.time}
-                onChange={handleChange}
-                required
-                className="w-full bg-black/40 border border-[var(--gold)]/30 rounded-lg px-4 py-3 text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]/60 focus:ring-1 focus:ring-[var(--gold)]/30 transition-colors"
-              />
+              <select
+  name="time"
+  value={formData.time}
+  onChange={handleChange}
+  required
+  disabled={!formData.date}
+  className="w-full bg-black/40 border border-[var(--gold)]/30 rounded-lg px-4 py-3 text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]/60 focus:ring-1 focus:ring-[var(--gold)]/30 transition-colors appearance-none cursor-pointer disabled:opacity-50"
+  style={{
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23D4AF37' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
+    backgroundPosition: "right 0.75rem center",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "1.5em 1.5em",
+    paddingRight: "2.5rem",
+  }}
+>
+  <option value="" className="bg-[var(--charcoal)]">
+    {formData.date ? "Select a time" : "Select a date first"}
+  </option>
+
+  {getAvailableTimeSlots().map((slot) => (
+    <option
+      key={slot.value}
+      value={slot.value}
+      className="bg-[var(--charcoal)] text-[var(--cream)]"
+    >
+      {slot.label}
+    </option>
+  ))}
+</select>
             </div>
           </div>
 

@@ -2,7 +2,11 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { MapPin, Phone, Mail, Clock, ExternalLink } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, ExternalLink, MessageCircle } from "lucide-react";
+
+type ContactProps = {
+  onReserveClick?: () => void;
+};
 
 const contactInfo = [
   {
@@ -18,6 +22,12 @@ const contactInfo = [
     href: "tel:+2349038900015",
   },
   {
+    icon: MessageCircle,
+    label: "WhatsApp",
+    value: "+234 817 001 1228",
+    href: "https://wa.me/2348170011228?text=Hello%20Casper%20%26%20Gambini's,%20I%20would%20like%20to%20make%20a%20reservation",
+  },
+  {
     icon: Mail,
     label: "Email",
     value: "info@casperandgambinis.com",
@@ -30,7 +40,7 @@ const contactInfo = [
   },
 ];
 
-export default function Contact() {
+export default function Contact({ onReserveClick }: ContactProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -110,10 +120,13 @@ export default function Contact() {
               transition={{ duration: 0.5, delay: 0.7 }}
               className="pt-6"
             >
-              <a href="tel:+2349038900015" className="btn-primary inline-flex items-center gap-2">
-                <Phone size={16} />
-                Call to Reserve
-              </a>
+              <button
+                type="button"
+                onClick={onReserveClick}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                Reserve Now
+              </button>
             </motion.div>
           </motion.div>
 

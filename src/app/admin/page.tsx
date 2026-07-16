@@ -243,12 +243,18 @@ export default function AdminDashboard() {
   });
   const [editableContact, setEditableContact] = useState({
     address: "Ikeja City Mall, Obafemi Awolowo Way, Oregun, Ikeja 101233, Lagos, Nigeria",
-    phone: "+234 903 890 0015",
+    phone: "+2349038900015",
     email: "info@casperandgambinis.com",
     instagram: "@casperandgambinis",
     facebook: "CasperGambinisIkeja",
     twitter: "@CandGIkeja",
   });
+  const [dashboardStats, setDashboardStats] = useState({
+  todayReservations: 0,
+  pendingReservations: 0,
+  confirmedReservations: 0,
+  completedReservations: 0,
+});
 
   const showToast = useCallback((message: string, type: "success" | "error" = "success") => {
     setToast({ message, type });
@@ -272,6 +278,7 @@ export default function AdminDashboard() {
   showToast(error.message, "error");
   return;
 }
+setEditableEvents(data || []);
 
 
 
@@ -282,6 +289,62 @@ export default function AdminDashboard() {
   }
 
   loadEvents();
+}, []);
+useEffect(() => {
+  async function loadDashboardStats() {
+    const today = new Date().toISOString().split("T")[0];
+
+    const { data } = await supabase
+      .from("reservations")
+      .select("status, reservation_date");
+
+    if (!data) return;
+
+    setDashboardStats({
+      todayReservations: data.filter(
+        (r) => r.reservation_date === today
+      ).length,
+
+      pendingReservations: data.filter(
+        (r) => r.status === "Pending"
+      ).length,
+
+      confirmedReservations: data.filter(
+        (r) => r.status === "Confirmed"
+      ).length,
+
+      completedReservations: data.filter(
+        (r) => r.status === "Completed"
+      ).length,
+    });
+  }
+
+  loadDashboardStats();
+}, []);
+useEffect(() => {
+  async function loadOpeningHours() {
+    const { data, error } = await supabase
+      .from("opening_hours")
+      .select("*");
+      console.log("Opening Hours Data:", data);
+console.log("Opening Hours Error:", error);
+
+    if (error || !data) return;
+
+    const hours: Record<string, string> = {};
+
+    data.forEach((row) => {
+      hours[row.day.toLowerCase()] =
+        `${row.opening_time} – ${row.closing_time}`;
+    });
+
+    setEditableHours((prev) => ({
+      ...prev,
+      ...hours,
+    }));
+  }
+
+  loadOpeningHours();
 }, []);
   
 
@@ -295,10 +358,12 @@ export default function AdminDashboard() {
   const renderContent = () => {
     switch (activeSection) {
       case "overview":
-        return <OverviewSection
-          stats={{ totalFoodItems, totalBeverageItems, totalEvents, totalReviewsCount }}
-          editableHours={editableHours}
-        />;
+        return (
+  <OverviewSection
+    stats={dashboardStats}
+    editableHours={editableHours}
+  />
+);
       case "food-menu":
         return (
           <FoodMenuSection
@@ -500,7 +565,12 @@ export default function AdminDashboard() {
 // ============= SECTIONS =============
 
 function OverviewSection({ stats, editableHours }: {
-  stats: { totalFoodItems: number; totalBeverageItems: number; totalEvents: number; totalReviewsCount: number };
+  stats: {
+  todayReservations: number;
+  pendingReservations: number;
+  confirmedReservations: number;
+  completedReservations: number;
+};
   editableHours: Record<string, string>;
 }) {
   return (
@@ -510,10 +580,29 @@ function OverviewSection({ stats, editableHours }: {
 
       {/* Stats Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={Utensils} label="Food Menu Items" value={stats.totalFoodItems} />
-        <StatCard icon={Wine} label="Beverage Items" value={stats.totalBeverageItems} />
-        <StatCard icon={Calendar} label="Events" value={stats.totalEvents} sub="Active listings" />
-        <StatCard icon={Star} label="Reviews" value={stats.totalReviewsCount} />
+        <StatCard
+  icon={Calendar}
+  label="Today's Reservations"
+  value={stats.todayReservations}
+/>
+
+<StatCard
+  icon={Clock}
+  label="Pending Reservations"
+  value={stats.pendingReservations}
+/>
+
+<StatCard
+  icon={CheckCircle}
+  label="Confirmed Reservations"
+  value={stats.confirmedReservations}
+/>
+
+<StatCard
+  icon={Users}
+  label="Completed Reservations"
+  value={stats.completedReservations}
+/>
       </div>
 
       {/* Quick Actions */}
@@ -901,11 +990,27 @@ function EventsSection({ eventsList, setEvents, showToast, setConfirm }: {
       title: "Delete Event",
       message: "Are you sure you want to delete this event?",
       danger: true,
-      onConfirm: () => {
-        setEvents(eventsList.filter((e) => e.id !== id));
-        showToast("Event deleted");
-        setConfirm({ open: false, title: "", message: "", onConfirm: () => {} });
-      },
+      onConfirm: async () => {
+  const { error } = await supabase
+    .from("events")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    showToast(error.message, "error");
+    return;
+  }
+
+  setEvents(eventsList.filter((e) => e.id !== id));
+  showToast("Event deleted");
+
+  setConfirm({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+},
     });
   };
 
@@ -1129,7 +1234,21 @@ function HoursSection({ hours, setHours, showToast }: {
           ))}
         </div>
         <button
-          onClick={() => showToast("Opening hours updated")}
+          onClick={async () => {
+  for (const [day, value] of Object.entries(hours)) {
+    const [opening_time, closing_time] = value.split(" – ");
+
+    await supabase
+      .from("opening_hours")
+      .update({
+        opening_time,
+        closing_time,
+      })
+      .eq("day", day.charAt(0).toUpperCase() + day.slice(1));
+  }
+
+  showToast("Opening hours updated");
+}}
           className="mt-6 px-4 py-2 rounded-lg gold-bg text-[var(--warm-black)] text-sm font-medium flex items-center gap-1.5"
         >
           <Save size={14} /> Save Changes

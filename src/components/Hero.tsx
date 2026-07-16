@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, Phone } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 type HeroProps = {
   onReserveClick: () => void;
@@ -131,15 +131,10 @@ export default function Hero({ onReserveClick }: HeroProps) {
             View Menu
           </a>
           <button
-  onClick={() => {
-    console.log("BUTTON CLICKED");
-    console.log("onReserveClick =", onReserveClick);
-    onReserveClick();
-  }}
+  onClick={onReserveClick}
   className="btn-outline text-base sm:text-lg flex items-center justify-center gap-2"
 >
-  <Phone size={18} />
-  Reserve Test 123
+  Reserve Now
 </button>
         </motion.div>
 

@@ -28,8 +28,16 @@ const resend = new Resend(process.env.RESEND_API_KEY);
   <div style="max-width:600px;margin:auto;background:#1a1a1a;border:2px solid #c8a44d;border-radius:16px;overflow:hidden;">
 
     <div style="background:#c8a44d;padding:30px;text-align:center;">
-      <h1 style="margin:0;color:#111;font-size:32px;">Casper & Gambini's</h1>
-      <p style="margin:8px 0 0;font-size:18px;color:#111;">Reservation Confirmed ✓</p>
+      <img
+   src="https://i.postimg.cc/rFdmmTyW/images.png"
+  alt="Casper & Gambini's"
+  width="220"
+  style="display:block;margin:0 auto 20px auto;"
+/>
+
+<h2 style="margin:0;color:#111;font-size:28px;">
+  Reservation Confirmed ✓
+</h2>
     </div>
 
     <div style="padding:35px;color:#f5f5f5;line-height:1.8;">

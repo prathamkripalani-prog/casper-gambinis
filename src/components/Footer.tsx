@@ -4,6 +4,10 @@
 
 import { useState } from "react";
 import { MapPin, Phone, Mail, Clock, Camera, MessageCircle, AtSign, ArrowUp } from "lucide-react";
+
+type FooterProps = {
+  onReserveClick?: () => void;
+};
 import LoginModal from "@/components/LoginModal";
 
 const socialLinks = [
@@ -12,7 +16,7 @@ const socialLinks = [
   { icon: AtSign, href: "#", label: "Twitter" },
 ];
 
-export default function Footer() {
+export default function Footer({ onReserveClick }: FooterProps) {
   const [loginOpen, setLoginOpen] = useState(false);
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -98,6 +102,12 @@ export default function Footer() {
                 <a href="tel:+2349038900015" className="flex items-center gap-2 text-sm text-[var(--cream)]/50 hover:text-[var(--gold)] transition-colors">
                   <Phone size={14} />
                   +234 903 890 0015
+                </a>
+              </li>
+              <li>
+                <a href="https://wa.me/2348170011228?text=Hello%20Casper%20%26%20Gambini's,%20I%20would%20like%20to%20make%20a%20reservation" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-[var(--cream)]/50 hover:text-[var(--gold)] transition-colors">
+                  <MessageCircle size={14} />
+                  +234 817 001 1228
                 </a>
               </li>
               <li>

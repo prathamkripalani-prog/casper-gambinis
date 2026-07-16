@@ -38,7 +38,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[var(--warm-black)]">
       <Particles />
-      <Navbar />
+      <Navbar onReserveClick={() => setShowReservation(true)} />
       <Hero onReserveClick={() => setShowReservation(true)} />
       <About />
       <FeaturedDishes />
@@ -47,8 +47,8 @@ export default function Home() {
       <Events />
       <Gallery />
       <Reviews />
-      <Contact />
-      <Footer />
+      <Contact onReserveClick={() => setShowReservation(true)} />
+      <Footer onReserveClick={() => setShowReservation(true)} />
       <ReservationModal
   isOpen={showReservation}
   onClose={() => setShowReservation(false)}
