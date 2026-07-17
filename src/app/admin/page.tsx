@@ -241,14 +241,14 @@ export default function AdminDashboard() {
     saturday: "10:00 AM – 2:00 AM",
     sunday: "10:00 AM – 2:00 AM",
   });
+ 
   const [editableContact, setEditableContact] = useState({
-    address: "Ikeja City Mall, Obafemi Awolowo Way, Oregun, Ikeja 101233, Lagos, Nigeria",
-    phone: "+2349038900015",
-    email: "info@casperandgambinis.com",
-    instagram: "@casperandgambinis",
-    facebook: "CasperGambinisIkeja",
-    twitter: "@CandGIkeja",
-  });
+  address: "",
+  phone: "",
+  email: "",
+  instagram: "",
+});
+  
   const [dashboardStats, setDashboardStats] = useState({
   todayReservations: 0,
   pendingReservations: 0,
@@ -345,6 +345,25 @@ console.log("Opening Hours Error:", error);
   }
 
   loadOpeningHours();
+}, []);
+useEffect(() => {
+  async function loadContactInfo() {
+    const { data, error } = await supabase
+      .from("contact_info")
+      .select("*")
+      .single();
+
+    if (error || !data) return;
+
+    setEditableContact({
+      address: data.address || "",
+      phone: data.phone || "",
+      email: data.email || "",
+      instagram: data.instagram || "",
+    });
+  }
+
+  loadContactInfo();
 }, []);
   
 
@@ -1210,8 +1229,21 @@ function HoursSection({ hours, setHours, showToast }: {
   const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
   type Day = typeof days[number];
 
-  const handleChange = (day: Day, value: string) => {
-    setHours({ ...hours, [day]: value });
+  // Updated handleChange to support opening/closing fields
+  const handleChange = (
+    day: Day,
+    field: "opening" | "closing",
+    value: string
+  ) => {
+    const [opening, closing] = hours[day].split(" – ");
+
+    setHours({
+      ...hours,
+      [day]:
+        field === "opening"
+          ? `${value} – ${closing}`
+          : `${opening} – ${value}`,
+    });
   };
 
   return (
@@ -1224,12 +1256,22 @@ function HoursSection({ hours, setHours, showToast }: {
           {days.map((day) => (
             <div key={day} className="flex items-center gap-4">
               <label className="w-24 text-sm text-[var(--cream)]/70 capitalize font-medium">{day}</label>
-              <input
-                type="text"
-                value={hours[day]}
-                onChange={(e) => handleChange(day, e.target.value)}
-                className="flex-1 bg-white/5 border border-[var(--gold)]/10 rounded-lg px-3 py-2 text-sm text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]/30"
-              />
+              <div className="flex-1 grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={hours[day].split(" – ")[0]}
+                  onChange={(e) => handleChange(day, "opening", e.target.value)}
+                  placeholder="Opening"
+                  className="bg-white/5 border border-[var(--gold)]/10 rounded-lg px-3 py-2 text-sm text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]/30"
+                />
+                <input
+                  type="text"
+                  value={hours[day].split(" – ")[1]}
+                  onChange={(e) => handleChange(day, "closing", e.target.value)}
+                  placeholder="Closing"
+                  className="bg-white/5 border border-[var(--gold)]/10 rounded-lg px-3 py-2 text-sm text-[var(--cream)] focus:outline-none focus:border-[var(--gold)]/30"
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -1259,7 +1301,12 @@ function HoursSection({ hours, setHours, showToast }: {
 }
 
 function ContactSection({ contact, setContact, showToast }: {
-  contact: { address: string; phone: string; email: string; instagram: string; facebook: string; twitter: string };
+  contact: {
+    address: string;
+    phone: string;
+    email: string;
+    instagram: string;
+  };
   setContact: (c: any) => void;
   showToast: (msg: string, type?: "success" | "error") => void;
 }) {
@@ -1278,8 +1325,7 @@ function ContactSection({ contact, setContact, showToast }: {
           { field: "phone", label: "Phone", icon: Phone, type: "text" },
           { field: "email", label: "Email", icon: Mail, type: "email" },
           { field: "instagram", label: "Instagram", icon: MessageSquare, type: "text" },
-          { field: "facebook", label: "Facebook", icon: MessageSquare, type: "text" },
-          { field: "twitter", label: "Twitter", icon: MessageSquare, type: "text" },
+          
         ].map(({ field, label, icon: Icon, type }) => (
           <div key={field} className="flex items-center gap-3">
             <Icon size={16} className="text-[var(--gold)]/50 flex-shrink-0" />
@@ -1293,7 +1339,24 @@ function ContactSection({ contact, setContact, showToast }: {
           </div>
         ))}
         <button
-          onClick={() => showToast("Contact information updated")}
+         onClick={async () => {
+  const { error } = await supabase
+    .from("contact_info")
+    .update({
+      address: contact.address,
+      phone: contact.phone,
+      email: contact.email,
+      instagram: contact.instagram,
+    })
+    .eq("id", 1);
+
+  if (error) {
+    showToast(error.message, "error");
+    return;
+  }
+
+  showToast("Contact information updated");
+}}
           className="mt-4 px-4 py-2 rounded-lg gold-bg text-[var(--warm-black)] text-sm font-medium flex items-center gap-1.5"
         >
           <Save size={14} /> Save Changes
